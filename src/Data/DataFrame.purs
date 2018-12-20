@@ -2,7 +2,7 @@ module Data.DataFrame where
 
 import Prelude
 
-import Control.Apply (lift3)
+import Control.Apply (lift2, lift3)
 import Data.Compactable (class Compactable, separate)
 import Data.DataFrame.Helper (class RecToRow, recToRow)
 import Data.Filterable (class Filterable, partitionMap)
@@ -49,7 +49,7 @@ instance filterableDF :: Filterable DataFrame where
   partitionMap f = (\{left, right} -> {left: wrap left, right: wrap right}) <<< partitionMap f <<< unwrap
 
 getColumns :: List (List String) -> String
-getColumns (Cons x y) = (surround " | " x) <> "\n"
+getColumns (Cons x y) = surround " | " x
 getColumns Nil = ""
 
 instance showRecordDataFrame ::
@@ -64,17 +64,17 @@ instance showUntypedDataFrame :: Show (DataFrame (Map NonEmptyString String)) wh
     lift3 (\title summary remaining -> title <> summary <> remaining) column (take 10 >>> showSummary) showRemainingCount
     where
     getField f = map (Map.toUnfoldable >>> sortBy (compare `on` fst)) >>> transpose >>> map (drawColumn f) >>> transpose
-    column = getField (fst >>> toString) >>> getColumns
+    column = getField (fst >>> toString) >>> getColumns >>> lift2 append identity (length >>> power "-" >>> append "\n")
     getValue = (flip intercalate <*> (head >>> maybe 0 length >>> power "-" >>> append "\n"))
     showSummary = getField snd
       >>> map (surround " | " >>> append "\n")
       >>> getValue
     drawColumn f xs =
       map
-        (f >>> padTo (max (maxLengthOfValues xs) (maybe 0 (fst >>> show >>> length) (head xs))))
+        (f >>> padTo (max (maxLengthOfValues xs) (maybe 0 (fst >>> toString >>> length) (head xs))))
         xs
     maxLengthOfValues =
-      map (snd >>> show >>> length)
+      map (snd >>> length)
       >>> maximum
       >>> fromMaybe 0
     padTo :: Int -> String -> String
