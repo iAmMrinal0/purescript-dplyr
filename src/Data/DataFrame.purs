@@ -9,10 +9,10 @@ import Data.Filterable (class Filterable, partitionMap)
 import Data.Foldable (maximum, surround)
 import Data.Function (on)
 import Data.Generic.Rep (class Generic)
-import Data.List (List(..), catMaybes, fold, head, mapMaybe, partition, take, transpose, zipWith)
+import Data.List (List(..), catMaybes, fold, head, mapMaybe, partition, take, transpose, uncons, zipWith)
 import Data.List (filter, length) as List
 import Data.List.Types (List)
-import Data.Map (Map)
+import Data.Map (Map, size)
 import Data.Map (toUnfoldable) as Map
 import Data.Maybe (fromMaybe, maybe)
 import Data.Monoid (power)
@@ -106,9 +106,10 @@ instance showUntypedDataFrame :: Show (DataFrame (Map NonEmptyString String)) wh
 
       showRemainingCount :: List (Row String) -> String
       showRemainingCount =
-        List.length >>>
-        (_ - 10) >>>
-        ((\l -> if _ then "\n... and " <> show l <> " more" else mempty) <*> (_ > 0))
+        uncons >>>
+        maybe mempty
+        (\{head, tail} ->
+        "\n\n" <> show (List.length tail + 1) <> " rows x " <> show (size head) <> " columns")
 
       getColumns :: List (List String) -> String
       getColumns (Cons x y) = surround "| " x
